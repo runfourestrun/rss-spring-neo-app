@@ -1,8 +1,6 @@
 package com.fournier.statedeptrssfeed.controller;
 
 import com.fournier.statedeptrssfeed.rssfeed.RSSFeedProxy;
-import org.apache.coyote.Response;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,28 +19,22 @@ public class RssController {
         this.rssFeedProxy = rssFeedProxy;
     }
 
+
     @GetMapping("/poll")
     public ResponseEntity<?> pollRSSFeed() throws IOException {
-        var list = rssFeedProxy.consumeRSSFeed();
-        var example = list.stream()
-                .filter(syndEntry -> {
-                    boolean b = syndEntry.getAuthor().length() > 10;
-                    return b;
-                })
-                .findFirst();
 
 
-        if(example.isPresent()){
-           return  ResponseEntity.status(HttpStatus.ACCEPTED)
-                    .body(example.get());
-        }
+        var example = rssFeedProxy.consumeRSSFeed();
 
-        else {
-
-           return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        if(example.isEmpty()){
+            return ResponseEntity.status(HttpStatus.ACCEPTED)
                     .build();
         }
 
+        else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .build();
+        }
 
 
     }

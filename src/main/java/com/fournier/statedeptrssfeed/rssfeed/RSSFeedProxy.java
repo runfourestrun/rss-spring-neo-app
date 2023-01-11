@@ -1,26 +1,24 @@
 package com.fournier.statedeptrssfeed.rssfeed;
 
 
-import com.fournier.statedeptrssfeed.entity.ArticleEntity;
-import com.fournier.statedeptrssfeed.util.GeneralUtil;
+import com.fournier.statedeptrssfeed.entity.Article;
 import com.fournier.statedeptrssfeed.util.TriFunction;
 import com.sun.syndication.feed.synd.SyndEntry;
-import com.sun.syndication.feed.synd.SyndEntryImpl;
 import com.sun.syndication.feed.synd.SyndFeed;
 import com.sun.syndication.feed.synd.SyndFeedImpl;
 import com.sun.syndication.io.SyndFeedInput;
 import com.sun.syndication.io.XmlReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URL;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,13 +30,13 @@ import java.util.stream.Collectors;
 public class RSSFeedProxy {
     private final Logger LOG = LoggerFactory.getLogger(RSSFeedProxy.class);
 
-    @Value("${rss.feed.urls[0])")
+    @Value("${rss.feed.urls[0]}")
     private String rssFeedUrl;
 
-    private final TriFunction<String,String,String, ArticleEntity> articleFactory = ArticleEntity::new;
+    //todo: look into article factory
+    //private final TriFunction<String, String, String, Article> articleFactory = Article::new;
 
     private SyndFeed syndFeed;
-
 
 
     public RSSFeedProxy() {
@@ -47,36 +45,75 @@ public class RSSFeedProxy {
 
 
 
-    public List<SyndEntry> consumeRSSFeed() throws IOException {
 
+
+    //TODO: 1. Behavior parameterize.
+    //TODO: 2. Remove ugly lambda
+    //TODO: 3. I had to remove the List<Author> attribute from Article model, to include that I need to write a custom deserliazer.
+    public List<Article> consumeRSSFeed() throws IOException {
         URL url = new URL(rssFeedUrl);
-
         List<SyndEntry> rssEntries = getRssEntries(url);
+        List<SyndEntry> filteredRssEntries = rssEntryFilter(rssEntries);
 
-        rssEntries.forEach(feed -> System.out.println(feed.toString()));
+        List<Article> articles = filteredRssEntries.stream()
+                .map(syndEntry -> {
+                    var link = syndEntry.getLink();
+                    var title = syndEntry.getTitle();
+                    var date = syndEntry.getPublishedDate();
+                    var description = syndEntry.getDescription().getValue();
+                    Article article = new Article(link,title,date,description);
+                    return article;
 
-        return rssEntries;
 
-        }
-
-
+                })
+                .collect(Collectors.toList());
 
 
+        articles.forEach(article -> System.out.println(article.toString()));
 
 
-    private List<SyndEntry> getRssEntries(URL url){
+        return articles;
+
+
+
+    }
+
+
+    private List<SyndEntry> getRssEntries(URL url) {
         List<SyndEntry> syndEntries = new ArrayList<>();
-        try(XmlReader reader = new XmlReader(url)){
+        try (XmlReader reader = new XmlReader(url)) {
             SyndFeed feed = new SyndFeedInput().build(reader);
             syndEntries = feed.getEntries();
-            syndEntries.forEach(entry -> System.out.println(entry.toString()));
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             LOG.error(e.getMessage());
         }
 
         return syndEntries;
     }
+
+
+    //todo: behavior parameterize. Pull out the lambda logic in the filter.
+    private List<SyndEntry> rssEntryFilter(List<SyndEntry> entryList) {
+        List<SyndEntry> filteredEntryList = entryList.stream()
+                .filter(syndEntry -> {
+                    Instant now = Instant.now();
+                    Instant yesterday = now.minus(1, ChronoUnit.DAYS);
+                    Date yeserdayDate = Date.from(yesterday);
+                    return syndEntry.getPublishedDate().after(yeserdayDate);
+                })
+                .collect(Collectors.toList());
+
+        filteredEntryList.forEach(syndEntry -> System.out.println(syndEntry.toString()));
+
+
+        return filteredEntryList;
+    }
+
+
+
+
+
+
 
 
 
