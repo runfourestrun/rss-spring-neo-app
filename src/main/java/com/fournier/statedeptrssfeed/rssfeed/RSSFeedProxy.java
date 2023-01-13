@@ -138,7 +138,6 @@ public class RSSFeedProxy {
                 })
                 .collect(Collectors.toList());
 
-        filteredEntryList.forEach(syndEntry -> System.out.println(syndEntry.toString()));
 
 
         return filteredEntryList;

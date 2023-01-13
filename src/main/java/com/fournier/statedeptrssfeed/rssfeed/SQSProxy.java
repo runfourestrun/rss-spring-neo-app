@@ -6,13 +6,12 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.licensemanager.model.LicenseStatus;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.amazonaws.services.sqs.model.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +24,8 @@ public class SQSProxy {
     private static final String AWSREGION = "us-west-2";
 
     private final String accessKey;
+
+    private int messageRequestID;
 
 
     private final String secretKey;
@@ -53,11 +54,16 @@ public class SQSProxy {
 
 
 
-    public void sqsPost(List<String> json){
+    public void sqsPostMessage(List<String> json){
         json.stream()
                 .map(jsonObject -> createMessageAttributeValues(jsonObject))
                 .forEach(jsonString -> sendMesssageStandardQueue(jsonString));
 
+
+    }
+
+
+    public void sqsPostMessages(List<String> json){
 
     }
 
@@ -79,6 +85,51 @@ public class SQSProxy {
                 .withDelaySeconds(10)
                 .withMessageAttributes(messageAttributeValueMap);
 
+
+
+    }
+
+
+    /***
+     * todo: I don't like how imperative this looks but..
+     * todo: I can't implement using Streams (functional approach), since I can't increment the Id in a lambda.
+     *
+     * jsonStringList.streams().map( // can't increment an id out of the scope here)
+     *
+     * @param jsonStringList
+     */
+    private void createMultipleMessages(List<String> jsonStringList){
+
+
+        ArrayList<>
+        int id = 0;
+
+        for(String json: jsonStringList){
+            String stringId = "id-" + id;
+
+
+            var message = new SendMessageBatchRequestEntry()
+                    .withId(stringId)
+                    .withMessageBody(json);
+
+
+
+
+
+
+        }
+    }
+
+
+
+
+
+
+
+
+
+    private void sendMultipleMessages(){
+        List<SendMessageBatchRequest> messageEntries = new ArrayList<>();
 
 
     }
