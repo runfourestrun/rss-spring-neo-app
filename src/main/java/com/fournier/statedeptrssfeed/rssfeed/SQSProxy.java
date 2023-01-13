@@ -23,12 +23,11 @@ public class SQSProxy {
 
 
     private static final String AWSREGION = "us-west-2";
-    @Value("${access.key}")
-    private String accessKey;
+
+    private final String accessKey;
 
 
-    @Value("${secret.key}")
-    private String secretKey;
+    private final String secretKey;
 
 
     @Value("${queue.url}")
@@ -39,8 +38,13 @@ public class SQSProxy {
     private AmazonSQS sqsClient;
 
 
-    public SQSProxy(){
+    public SQSProxy(@Value("${access.key}") String accessKey,@Value("${secret.key}") String secretKey){
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
+
         this.awsCredentials = new BasicAWSCredentials(accessKey,secretKey);
+
+
         this.sqsClient = AmazonSQSClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
                 .withRegion(AWSREGION)
@@ -49,7 +53,7 @@ public class SQSProxy {
 
 
 
-    public void SQSPost(List<String> json){
+    public void sqsPost(List<String> json){
         json.stream()
                 .map(jsonObject -> createMessageAttributeValues(jsonObject))
                 .forEach(jsonString -> sendMesssageStandardQueue(jsonString));

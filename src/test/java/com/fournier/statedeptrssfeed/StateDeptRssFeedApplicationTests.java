@@ -8,6 +8,7 @@ class StateDeptRssFeedApplicationTests {
 
 	@Test
 	void contextLoads() {
+
 	}
 
 }

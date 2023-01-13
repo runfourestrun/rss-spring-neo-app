@@ -58,7 +58,7 @@ public class RSSFeedProxy {
     //TODO: 1. Behavior parameterize.
     //TODO: 2. Remove ugly lambda
     //TODO: 3. I had to remove the List<Author> attribute from Article model, to include that I need to write a custom deserliazer.
-    public List<Article> consumeRSSFeed() throws IOException {
+    public List<String> consumeRSSFeed() throws IOException {
         URL url = new URL(rssFeedUrl);
         List<SyndEntry> rssEntries = getRssEntries(url);
         List<SyndEntry> filteredRssEntries = rssEntryFilter(rssEntries);
@@ -78,7 +78,9 @@ public class RSSFeedProxy {
 
 
 
-        return articles;
+        List<String> jsonArticles =  marshall(articles);
+
+        return jsonArticles;
 
 
 

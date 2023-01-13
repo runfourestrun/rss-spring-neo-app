@@ -4,6 +4,7 @@ import com.amazonaws.services.kendra.model.SalesforceKnowledgeArticleState;
 import com.fournier.statedeptrssfeed.entity.Article;
 import com.fournier.statedeptrssfeed.rssfeed.RSSFeedProxy;
 import com.fournier.statedeptrssfeed.rssfeed.SQSProxy;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +21,8 @@ public class RssController {
     private RSSFeedProxy rssFeedProxy;
     private SQSProxy sqsProxy;
 
+
+    @Autowired
     public RssController(RSSFeedProxy rssFeedProxy,SQSProxy sqsProxy){
         this.rssFeedProxy = rssFeedProxy;
         this.sqsProxy = sqsProxy;
@@ -31,10 +34,12 @@ public class RssController {
     public ResponseEntity<?> pollRSSFeed() throws IOException {
 
 
-        List<Article> articles = rssFeedProxy.consumeRSSFeed();
+        List<String> jsonArticles = rssFeedProxy.consumeRSSFeed();
+        sqsProxy.sqsPost(jsonArticles);
 
 
-        if(articles.isEmpty()){
+
+        if(jsonArticles.isEmpty()){
             return ResponseEntity.status(HttpStatus.ACCEPTED)
                     .build();
         }
