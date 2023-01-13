@@ -1,6 +1,10 @@
 package com.fournier.statedeptrssfeed.rssfeed;
 
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fournier.statedeptrssfeed.entity.Article;
 import com.fournier.statedeptrssfeed.util.TriFunction;
 import com.sun.syndication.feed.synd.SyndEntry;
@@ -33,14 +37,18 @@ public class RSSFeedProxy {
     @Value("${rss.feed.urls[0]}")
     private String rssFeedUrl;
 
+
+
     //todo: look into article factory
     //private final TriFunction<String, String, String, Article> articleFactory = Article::new;
 
     private SyndFeed syndFeed;
+    private AmazonSQS amazonSQS;
 
 
     public RSSFeedProxy() {
         this.syndFeed = new SyndFeedImpl();
+
     }
 
 
@@ -69,14 +77,39 @@ public class RSSFeedProxy {
                 .collect(Collectors.toList());
 
 
-        articles.forEach(article -> System.out.println(article.toString()));
-
 
         return articles;
 
 
 
+
+
     }
+
+
+    /***
+     * This is the correct way to serialize a pojo/bean => json!
+     * @param articles
+     * @return
+     */
+    private List<String> marshall(List<Article> articles){
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        List<String> json = articles.stream()
+                .map(article -> {
+                    try {
+                        return objectMapper.writeValueAsString(article);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                }).collect(Collectors.toList());
+
+        return json;
+
+    }
+
+
 
 
     private List<SyndEntry> getRssEntries(URL url) {
